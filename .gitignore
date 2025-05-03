@@ -1,0 +1,45 @@
+# Python virtual environment
+venv/
+env/
+ENV/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Database files
+*.db
+*.sqlite3
+
+# Logs
+*.log
+
+# Environment variables
+.env
+
+# Large binary files
+*.so
+*.dylib
+*.dll
+*.pyd
+
+# Media files
+*.mp4
+*.avi
+*.mov
+*.jpg
+*.jpeg
+*.png
+*.gif
