@@ -5,6 +5,7 @@ import time
 import sys
 import math
 import json
+import struct
 
 class EyeBlinkCounter:
     def __init__(self, ear_threshold=0.2, min_frames_closed=1, max_frames_closed=5):
@@ -88,56 +89,38 @@ class EyeBlinkCounter:
         if self.face_mesh:
             self.face_mesh.close()
 
-def run_blink_detection_loop():
+def read_exactly(n):
+    buf = b''
+    while len(buf) < n:
+        chunk = sys.stdin.buffer.read(n - len(buf))
+        if not chunk:
+            raise EOFError("Unexpected end of stream")
+        buf += chunk
+    return buf
+
+# Read header: 4 bytes width, 4 bytes height (little-endian)
+header = read_exactly(8)
+width, height = struct.unpack('<II', header)
+channels = 4  # BGRA
+
+frame_size = width * height * channels
+
+while True:
     try:
+        frame_bytes = read_exactly(frame_size)
+        frame = np.frombuffer(frame_bytes, dtype=np.uint8).reshape((height, width, channels))
         counter = EyeBlinkCounter()
+        current_blinks, current_ear = counter.process_frame(frame)
+        if current_ear is not None and current_ear != float('inf'):
+            floored_ear = math.floor(current_ear * 100) / 100
+            rounded_ear = float(f"{floored_ear:.2f}")
+        else:
+            rounded_ear = "inf"
+        result = {"blinks": current_blinks, "ear": rounded_ear}
+        print(json.dumps(result), flush=True)
     except Exception as e:
-        print(f"Failed to initialize EyeBlinkCounter: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    if not counter.face_mesh:
-        print("Exiting due to FaceMesh initialization failure.", file=sys.stderr)
-        sys.exit(1)
-        
-    cap = cv2.VideoCapture(0)
-
-    if not cap.isOpened():
-        print("Error: Could not open camera.", file=sys.stderr)
-        counter.close()
-        sys.exit(1)
-
-    last_printed_blink_count = -1
-    last_printed_ear = None
-    print("Eye blink counter started. Outputting JSON...", file=sys.stderr)
-    print(json.dumps({"blinks": 0, "ear": "inf"}), flush=True)
-
-    try:
-        while cap.isOpened():
-            success, frame = cap.read()
-            if not success:
-                break
-            
-            current_blinks, current_ear = counter.process_frame(frame)
-            if current_ear is not None and current_ear != float('inf'):
-                floored_ear = math.floor(current_ear * 100) / 100
-                rounded_ear = float(f"{floored_ear:.2f}")
-            else:
-                rounded_ear = "inf"
-
-            if (current_blinks != last_printed_blink_count) or (rounded_ear != last_printed_ear):
-                print(json.dumps({"blinks": current_blinks, "ear": rounded_ear}), flush=True)
-                last_printed_blink_count = current_blinks
-                last_printed_ear = rounded_ear
-
-    except KeyboardInterrupt:
-        print("\nExiting due to user interruption...", file=sys.stderr)
-    except Exception as e:
-        print(f"An error occurred during processing: {e}", file=sys.stderr)
-    finally:
-        print("Releasing resources...", file=sys.stderr)
-        cap.release()
-        counter.close()
-        print("Eye blink counter stopped.", file=sys.stderr)
+        print(f"Error: {e}", file=sys.stderr)
+        break
 
 if __name__ == "__main__":
     run_blink_detection_loop() 
