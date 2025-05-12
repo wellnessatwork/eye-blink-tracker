@@ -38,7 +38,7 @@ pip install -r requirements.txt
 
 ## Usage
 
-1. Run the application:
+1. Run the main application:
 ```bash
 python app.py
 ```
@@ -54,6 +54,25 @@ python app.py
      - Eye state (open/closed)
      - EAR (Eye Aspect Ratio) value
      - Face detection status
+
+---
+
+### Run the JSON blink counter for integration
+
+If you want a minimal, headless script that outputs only the total blink count and EAR in JSON format (for integration with other applications, e.g., Swift/macOS):
+
+```bash
+python eye_blink_counter_json.py
+```
+
+- This script will output lines like:
+  ```json
+  {"blinks": 3, "ear": 0.21}
+  ```
+- The `ear` value is always floored to 2 decimal places.
+- Each line is a valid JSON object, suitable for real-time parsing by another application.
+
+---
 
 ## Features Description
 
@@ -73,11 +92,12 @@ python app.py
 
 ```
 eye-blink-tracker/
-├── app.py                 # Main application entry point
-├── requirements.txt       # Dependencies
-├── .gitignore            # Git ignore file
-├── LICENSE               # MIT License
-└── README.md             # This documentation
+├── app.py                   # Main application entry point
+├── eye_blink_counter_json.py # Minimal JSON output for integration
+├── requirements.txt         # Dependencies
+├── .gitignore              # Git ignore file
+├── LICENSE                 # MIT License
+└── README.md               # This documentation
 ```
 
 ## GitHub Repository Setup
